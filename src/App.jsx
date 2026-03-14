@@ -43,8 +43,23 @@ export default function FitnessTracker() {
   const [libraryTab, setLibraryTab] = useState("history");   // "history" | "exercises"
   const [analyticsTab, setAnalyticsTab] = useState("weight"); // "weight" | "progress" | "records"
   const [showProfile, setShowProfile] = useState(false);
-  const [profile, setProfile] = useState({ name: "", age: "", weight: "", height: "", goal: "" });
-  const [profileEdit, setProfileEdit] = useState({ name: "", age: "", weight: "", height: "", goal: "" });
+  const [profile, setProfile] = useState({ name: "", age: "", weight: "", height: "", goal: "", targetWeight: "" });
+  const [profileEdit, setProfileEdit] = useState({ name: "", age: "", weight: "", height: "", goal: "", targetWeight: "" });
+
+  const ACCENT = "#c49a4a";
+  const ACCENT2 = "#dbb96a";
+  const BG = "#faf6ef";
+  const CARD = "#fffef9";
+  const TEXT = "#221a10";
+  const MUTED = "#a8997f";
+  const BORDER = "#f0e6d2";
+
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = "@keyframes bounce{0%,80%,100%{transform:scale(0.7);opacity:0.4}40%{transform:scale(1);opacity:1}} input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; } input[type=number] { -moz-appearance: textfield; }";
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   useEffect(() => {
     const link = document.createElement("link");
@@ -135,8 +150,7 @@ export default function FitnessTracker() {
     <div style={{ background: "#faf6ef", height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter','Segoe UI',sans-serif", gap: 20 }}>
       <div style={{ fontSize: 36 }}>🏋️</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: "#c49a4a" }}>Iron Log</div>
-      <div style={{ display: "flex", gap: 6 }}>{[0,1,2].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#c49a4a", animation: `bounce 1.2s ease-in-out ${i*0.2}s infinite`, opacity: 0.7 }} />)}</div>
-      <style>{`@keyframes bounce{0%,80%,100%{transform:scale(0.7);opacity:0.4}40%{transform:scale(1);opacity:1}}`}</style>
+      <div style={{ display: "flex", gap: 6 }}>{[0,1,2].map(i => <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: "#c49a4a", animation: "bounce 1.2s ease-in-out " + (i*0.2) + "s infinite", opacity: 0.7 }} />)}</div>
     </div>
   );
 
@@ -175,39 +189,29 @@ export default function FitnessTracker() {
               </g>
             );
           })}
-          {hovered !== null && (() => {
-            const p = points[hovered];
-            const cx = sx(hovered), cy = sy(p.y);
-            const label = `${p.y} ${unit}`;
-            const dateLabel = new Date(p.x).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-            const boxW = Math.max(label.length, dateLabel.length) * 7 + 16;
-            const boxX = Math.min(Math.max(cx - boxW / 2, 0), W - boxW);
-            const boxY = cy - 52;
-            return (
-              <g style={{ pointerEvents: "none" }}>
-                <line x1={cx} y1={cy - 7} x2={cx} y2={H} stroke={color} strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4"/>
-                <rect x={boxX} y={boxY < 0 ? cy + 12 : boxY} width={boxW} height={38} rx="8"
-                  fill={CARD} stroke={BORDER} strokeWidth="1"
-                  style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.10))" }}/>
-                <text x={boxX + boxW/2} y={(boxY < 0 ? cy + 12 : boxY) + 14} textAnchor="middle"
-                  fontSize="11" fontWeight="700" fill={color}>{label}</text>
-                <text x={boxX + boxW/2} y={(boxY < 0 ? cy + 12 : boxY) + 28} textAnchor="middle"
-                  fontSize="10" fill={MUTED}>{dateLabel}</text>
-              </g>
-            );
-          })()}
+          {hovered !== null && hovered < points.length && renderTooltip(points[hovered], sx(hovered), sy(points[hovered].y), H, W, color, unit, CARD, BORDER, MUTED)}
         </svg>
       </div>
     );
   }
 
-  const ACCENT = "#c49a4a";
-  const ACCENT2 = "#dbb96a";
-  const BG = "#faf6ef";
-  const CARD = "#fffef9";
-  const TEXT = "#221a10";
-  const MUTED = "#a8997f";
-  const BORDER = "#f0e6d2";
+  function renderTooltip(p, cx, cy, H, W, color, unit, CARD, BORDER, MUTED) {
+    const label = p.y + " " + unit;
+    const dateLabel = new Date(p.x).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+    const boxW = Math.max(label.length, dateLabel.length) * 7 + 16;
+    const boxX = Math.min(Math.max(cx - boxW / 2, 0), W - boxW);
+    const boxY = cy - 52;
+    const ty = boxY < 0 ? cy + 12 : boxY;
+    return (
+      <g style={{ pointerEvents: "none" }}>
+        <line x1={cx} y1={cy - 7} x2={cx} y2={H} stroke={color} strokeWidth="1" strokeDasharray="3 3" strokeOpacity="0.4"/>
+        <rect x={boxX} y={ty} width={boxW} height={38} rx="8" fill={CARD} stroke={BORDER} strokeWidth="1"/>
+        <text x={boxX + boxW/2} y={ty + 14} textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>{label}</text>
+        <text x={boxX + boxW/2} y={ty + 28} textAnchor="middle" fontSize="10" fill={MUTED}>{dateLabel}</text>
+      </g>
+    );
+  }
+
 
   function CustomSelect({ id, value, onChange, options, placeholder = "— выбери —" }) {
     const isOpen = openDropdown === id;
@@ -580,6 +584,36 @@ export default function FitnessTracker() {
         ? (diffNum > 0 ? "#2e8a4a" : diffNum < 0 ? "#c0503a" : ACCENT)
         : (diffNum < 0 ? "#2e8a4a" : diffNum > 0 ? "#c0503a" : ACCENT);
 
+    let targetCard = null;
+    if (profile.targetWeight && last) {
+      const current = parseFloat(last.value);
+      const target = parseFloat(profile.targetWeight);
+      const startVal = first ? parseFloat(first.value) : current;
+      const toGo = (target - current).toFixed(1);
+      const totalDist = Math.abs(target - startVal) || 1;
+      const done = Math.abs(current - startVal);
+      const pct = Math.min(100, Math.round((done / totalDist) * 100));
+      const reached = (profile.goal === "gain" && current >= target) || (profile.goal === "loss" && current <= target) || (!profile.goal && Math.abs(toGo) < 0.1);
+      targetCard = (
+        <div style={{ ...S.card, marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={S.label}>Цель: {target} кг</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: reached ? "#2e8a4a" : ACCENT }}>
+              {reached ? "✓ Достигнута!" : "осталось " + Math.abs(toGo) + " кг"}
+            </span>
+          </div>
+          <div style={{ background: BORDER, borderRadius: 99, height: 10, overflow: "hidden", marginBottom: 8 }}>
+            <div style={{ height: "100%", width: pct + "%", borderRadius: 99, background: reached ? "#2e8a4a" : "linear-gradient(90deg, " + ACCENT + ", " + ACCENT2 + ")", transition: "width 0.4s" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: MUTED }}>
+            <span>{startVal} кг</span>
+            <span style={{ fontWeight: 700, color: ACCENT }}>{pct}%</span>
+            <span>{target} кг</span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={S.page}>
         <div style={{ fontSize: 22, fontWeight: 800, color: TEXT, marginBottom: 4 }}>Вес тела</div>
@@ -609,10 +643,11 @@ export default function FitnessTracker() {
           </div>
         )}
 
+        {targetCard}
+
         {sorted.length >= 2 && (
           <div style={{ ...S.card, marginBottom: 16 }}>
-            <span style={S.label}>Динамика</span>
-            <MiniChart points={chartPoints} color={diffColor} unit="кг" />
+            <span style={S.label}>Динамика</span>            <MiniChart points={chartPoints} color={diffColor} unit="кг" />
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
               <span style={{ fontSize: 11, color: MUTED }}>{first.value} кг · {formatDate(first.date)}</span>
               <span style={{ fontSize: 11, color: ACCENT, fontWeight: 700 }}>{last.value} кг · {formatDate(last.date)}</span>
@@ -683,11 +718,6 @@ export default function FitnessTracker() {
 
   return (
     <div style={S.app}>
-      <style>{`
-        input[type=number]::-webkit-inner-spin-button,
-        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        input[type=number] { -moz-appearance: textfield; }
-      `}</style>
       <div style={S.header}>
         <div style={S.logo}>Iron Log</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -720,8 +750,6 @@ export default function FitnessTracker() {
               {[
                 { key: "name", label: "Имя", placeholder: "Как тебя зовут?", type: "text" },
                 { key: "age", label: "Возраст", placeholder: "лет", type: "number" },
-                { key: "weight", label: "Вес", placeholder: "кг", type: "number" },
-                { key: "height", label: "Рост", placeholder: "см", type: "number" },
               ].map(({ key, label, placeholder, type }) => (
                 <div key={key} style={{ marginBottom: 12 }}>
                   <label style={S.label}>{label}</label>
@@ -740,6 +768,12 @@ export default function FitnessTracker() {
                     </button>
                   ))}
                 </div>
+              </div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.label}>Целевой вес (кг)</label>
+                <input type="number" placeholder="" value={profileEdit.targetWeight}
+                  onChange={e => setProfileEdit(p => ({ ...p, targetWeight: e.target.value }))}
+                  style={S.input} />
               </div>
               <button style={{ ...S.btn, width: "100%", marginTop: 4 }} onClick={async () => {
                 setProfile(profileEdit);
